@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureVault - File Encryption System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary-color: #ec4899;
+            --secondary-hover: #db2777;
+            --danger-color: #f43f5e;
+            --danger-hover: #e11d48;
+            --background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+            --card-bg: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: #e2e8f0;
+            --shadow: 0 10px 20px rgba(0, 0, 0, 0.1), 0 6px 6px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            transform: translateY(0);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12), 0 8px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            background: linear-gradient(120deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-weight: 300;
+            opacity: 0.9;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            background: linear-gradient(to bottom, rgba(99, 102, 241, 0.03), rgba(236, 72, 153, 0.03));
+        }
+
+        .file-input-wrapper:hover {
+            border-color: var(--primary-color);
+            transform: scale(1.01);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .file-input-wrapper.drag-over {
+            background: linear-gradient(to bottom, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
+            border-color: var(--primary-color);
+            transform: scale(1.02);
+        }
+
+        .file-input-icon {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.75rem;
+            display: inline-block;
+        }
+
+        .file-input-text {
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .file-input-hint {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        #fileInput {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        #fileDetails {
+            display: none;
+            background: rgba(79, 70, 229, 0.1);
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-top: 0.75rem;
+        }
+
+        #fileDetails span {
+            font-weight: 500;
+        }
+
+        .file-name {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-name button {
+            background: transparent;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .file-name button:hover {
+            color: var(--danger-hover);
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        select {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            appearance: none;
+            font-size: 1rem;
+            color: var(--text-primary);
+            background-color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+            transform: translateY(-1px);
+        }
+        
+        select:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .key-input-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .key-input {
+            flex: 1;
+            padding: 0.85rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            color: var(--text-primary);
+            background-color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+                    .key-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+            transform: translateY(-1px);
+        }
+        
+        .key-input.highlight {
+            background-color: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary-color);
+            transition: background-color 0.6s ease;
+        }
+        
+        .key-input:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .key-gen-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .key-gen-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        .key-hint {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .key-box {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 6px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(129, 140, 248, 0.1));
+            border-left: 4px solid var(--primary-color);
+            display: none;
+        }
+        
+        .key-box-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .key-box-content {
+            font-family: monospace;
+            word-break: break-all;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 4px;
+            border: 1px dashed var(--primary-color);
+        }
+        
+        .key-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+        }
+        
+        .key-action-btn {
+            background: transparent;
+            border: none;
+            color: var(--primary-color);
+            font-size: 0.875rem;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .key-action-btn:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .select-wrapper::after {
+            content: "\f0d7";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.2rem;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 0.85rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .btn:hover:after {
+            opacity: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-hover), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary-color), var(--secondary-hover));
+            color: white;
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, var(--secondary-hover), var(--secondary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(236, 72, 153, 0.4);
+        }
+
+        .btn-disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status-container {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .status-container.info {
+            display: flex;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(129, 140, 248, 0.1));
+            color: var(--primary-color);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .status-container.success {
+            display: flex;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.1));
+            color: #059669;
+            border-left: 4px solid #059669;
+        }
+
+        .status-container.error {
+            display: flex;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(248, 113, 113, 0.1));
+            color: #dc2626;
+            border-left: 4px solid #dc2626;
+        }
+
+        .status-icon {
+            font-size: 1.5rem;
+            margin-right: 0.75rem;
+        }
+
+        .status-message {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.75rem;
+            display: none;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            transition: width 0.3s ease;
+            border-radius: 10px;
+            background-size: 200% 100%;
+            animation: gradientShift 2s linear infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        footer {
+            margin-top: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-align: center;
+        }
+
+        /* Animations */
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0) translateX(0);
+            }
+            50% {
+                transform: translateY(-15px) translateX(10px);
+            }
+            100% {
+                transform: translateY(0) translateX(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .container {
+                max-width: 100%;
+                border-radius: 0;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SecureVault <i class="fas fa-shield-alt"></i></h1>
+            <p>Protect your files with military-grade encryption</p>
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 0;">
+                <div style="position: absolute; width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.1); top: 10%; left: 20%; animation: float 6s ease-in-out infinite;"></div>
+                <div style="position: absolute; width: 15px; height: 15px; border-radius: 50%; background: rgba(255,255,255,0.1); top: 30%; left: 80%; animation: float 7s ease-in-out infinite;"></div>
+                <div style="position: absolute; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.1); top: 70%; left: 10%; animation: float 8s ease-in-out infinite;"></div>
+                <div style="position: absolute; width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.1); top: 60%; left: 60%; animation: float 9s ease-in-out infinite;"></div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <div class="form-group">
+                <label for="fileInput">File Selection</label>
+                <div class="file-input-wrapper" id="dropZone">
+                    <i class="fas fa-cloud-upload-alt file-input-icon"></i>
+                    <div class="file-input-text">Drag and drop your file here</div>
+                    <div class="file-input-hint">or click to browse files</div>
+                    <input type="file" id="fileInput">
+                </div>
+                
+                <div id="fileDetails">
+                    <div class="file-name">
+                        <span id="fileName"></span>
+                        <button id="removeFile" title="Remove file">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="fileSize" class="file-input-hint"></div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="encryptionMethod">Encryption Method</label>
+                <div class="select-wrapper">
+                    <select id="encryptionMethod">
+                        <option value="aes">AES (Advanced Encryption Standard)</option>
+                        <option value="blowfish">Blowfish</option>
+                        <option value="tripledes">Triple DES</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group" id="keyInputGroup">
+                <label for="keyInput">Encryption Key</label>
+                <div class="key-input-container">
+                    <input type="text" id="keyInput" placeholder="Enter or generate a secure key" class="key-input">
+                    <button type="button" id="generateKeyBtn" class="key-gen-btn">
+                        <i class="fas fa-key"></i>
+                    </button>
+                </div>
+                <div class="key-hint">
+                    <i class="fas fa-info-circle"></i> 
+                    <span id="keyHintText">For decryption, you must provide the same key used for encryption.</span>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <button class="btn btn-primary" id="encryptBtn" disabled>
+                    Encrypt
+                </button>
+                <button class="btn btn-secondary" id="decryptBtn" disabled>
+                    Decrypt
+                </button>
+            </div>
+            
+            <div id="statusContainer" class="status-container">
+                <div class="status-icon"><i id="statusIcon" class="fas"></i></div>
+                <div class="status-message">
+                    <div id="statusTitle" class="status-title"></div>
+                    <div id="statusText"></div>
+                    <div class="progress-bar" id="progressBar">
+                        <div class="progress" id="progress"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="keyBox" class="key-box">
+                <div class="key-box-title">Save Your Encryption Key</div>
+                <div class="key-box-content" id="keyBoxContent"></div>
+                <div class="key-hint">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Keep this key safe. You'll need it to decrypt your file later.</span>
+                </div>
+                <div class="key-actions">
+                    <button id="copyKeyBtn" class="key-action-btn">
+                        <i class="fas fa-copy"></i> Copy to clipboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        SecureVault &copy; 2025 | All Rights Reserved
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const dropZone = document.getElementById('dropZone');
+            const fileDetails = document.getElementById('fileDetails');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            const removeFile = document.getElementById('removeFile');
+            const encryptBtn = document.getElementById('encryptBtn');
+            const decryptBtn = document.getElementById('decryptBtn');
+            const statusContainer = document.getElementById('statusContainer');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusTitle = document.getElementById('statusTitle');
+            const statusText = document.getElementById('statusText');
+            const progressBar = document.getElementById('progressBar');
+            const progress = document.getElementById('progress');
+            const keyInput = document.getElementById('keyInput');
+            const generateKeyBtn = document.getElementById('generateKeyBtn');
+            const keyBox = document.getElementById('keyBox');
+            const keyBoxContent = document.getElementById('keyBoxContent');
+            const copyKeyBtn = document.getElementById('copyKeyBtn');
+            const keyHintText = document.getElementById('keyHintText');
+
+            // File drag and drop functionality
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropZone.classList.add('drag-over');
+            }
+
+            function unhighlight() {
+                dropZone.classList.remove('drag-over');
+            }
+
+            dropZone.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                fileInput.files = files;
+                updateFileDetails();
+            }
+
+            // Key generation and management
+            generateKeyBtn.addEventListener('click', generateRandomKey);
+            
+            function generateRandomKey() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+';
+                let result = '';
+                const length = 24; // 24 characters for a strong key
+                
+                for (let i = 0; i < length; i++) {
+                    result += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                
+                keyInput.value = result;
+                
+                // Highlight the input briefly to show it's been updated
+                keyInput.classList.add('highlight');
+                setTimeout(() => {
+                    keyInput.classList.remove('highlight');
+                }, 600);
+            }
+            
+            copyKeyBtn.addEventListener('click', () => {
+                const keyText = keyBoxContent.textContent;
+                navigator.clipboard.writeText(keyText).then(() => {
+                    const originalText = copyKeyBtn.innerHTML;
+                    copyKeyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    setTimeout(() => {
+                        copyKeyBtn.innerHTML = originalText;
+                    }, 2000);
+                });
+            });
+            
+            // Update key hint based on file selection
+            function updateKeyHint(file) {
+                if (file && file.name.endsWith('.enc')) {
+                    keyHintText.textContent = 'Enter the key that was used to encrypt this file.';
+                    keyInput.placeholder = 'Enter the original encryption key';
+                } else {
+                    keyHintText.textContent = 'For decryption, you must provide the same key used for encryption.';
+                    keyInput.placeholder = 'Enter or generate a secure key';
+                }
+            }
+            
+            // Check if key is provided
+            function isKeyValid() {
+                return keyInput.value.trim().length >= 8; // Minimum 8 characters for a key
+            }
+            
+            // File selection handling
+            fileInput.addEventListener('change', updateFileDetails);
+
+            function updateFileDetails() {
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    fileName.textContent = file.name;
+                    fileSize.textContent = formatFileSize(file.size);
+                    fileDetails.style.display = 'block';
+                    
+                    // Update the key hint based on file type
+                    updateKeyHint(file);
+                    
+                    // Only enable buttons if we have a valid key
+                    checkEnableButtons();
+                } else {
+                    fileDetails.style.display = 'none';
+                    disableButtons();
+                }
+                resetStatus();
+                keyBox.style.display = 'none';
+            }
+            
+            // Check if we should enable the buttons
+            function checkEnableButtons() {
+                if (fileInput.files.length > 0 && isKeyValid()) {
+                    enableButtons();
+                } else {
+                    disableButtons();
+                }
+            }
+            
+            // Listen for changes to the key input
+            keyInput.addEventListener('input', checkEnableButtons);
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            // Remove file button
+            removeFile.addEventListener('click', () => {
+                fileInput.value = '';
+                fileDetails.style.display = 'none';
+                disableButtons();
+                resetStatus();
+            });
+
+            function enableButtons() {
+                encryptBtn.disabled = false;
+                decryptBtn.disabled = false;
+                encryptBtn.classList.remove('btn-disabled');
+                decryptBtn.classList.remove('btn-disabled');
+            }
+
+            function disableButtons() {
+                encryptBtn.disabled = true;
+                decryptBtn.disabled = true;
+                encryptBtn.classList.add('btn-disabled');
+                decryptBtn.classList.add('btn-disabled');
+            }
+
+            // Status updates
+            function resetStatus() {
+                statusContainer.style.display = 'none';
+                statusContainer.className = 'status-container';
+                progressBar.style.display = 'none';
+                progress.style.width = '0%';
+            }
+
+            function showStatus(type, title, message, showProgress = false) {
+                statusContainer.className = 'status-container ' + type;
+                statusContainer.style.display = 'flex';
+                
+                if (type === 'info') {
+                    statusIcon.className = 'fas fa-spinner loading';
+                } else if (type === 'success') {
+                    statusIcon.className = 'fas fa-check-circle';
+                } else if (type === 'error') {
+                    statusIcon.className = 'fas fa-exclamation-circle';
+                }
+                
+                statusTitle.textContent = title;
+                statusText.textContent = message;
+                
+                if (showProgress) {
+                    progressBar.style.display = 'block';
+                } else {
+                    progressBar.style.display = 'none';
+                }
+            }
+
+            function updateProgress(percent) {
+                progress.style.width = percent + '%';
+            }
+
+            // Processing functions
+            encryptBtn.addEventListener('click', () => processFile('encrypt'));
+            decryptBtn.addEventListener('click', () => processFile('decrypt'));
+
+            function processFile(action) {
+                const file = fileInput.files[0];
+                if (!file) {
+                    showStatus('error', 'No File Selected', 'Please select a file first.');
+                    return;
+                }
+                
+                if (!isKeyValid()) {
+                    showStatus('error', 'Invalid Key', 'Please enter a valid encryption key (minimum 8 characters).');
+                    return;
+                }
+
+                const encryptionMethod = document.getElementById('encryptionMethod').value;
+                const userKey = keyInput.value.trim();
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('method', encryptionMethod);
+                formData.append('key', userKey);  // Send the user-provided key to the server
+
+                // Determine operation display text
+                const operationText = action === 'encrypt' ? 'Encrypting' : 'Decrypting';
+                const operationPastText = action === 'encrypt' ? 'Encrypted' : 'Decrypted';
+                
+                // Show progress status
+                showStatus(
+                    'info', 
+                    `${operationText} File`, 
+                    `${operationText} file using ${encryptionMethod.toUpperCase()}...`,
+                    true
+                );
+                
+                // Hide the key box if it's visible (for multiple operations)
+                keyBox.style.display = 'none';
+                
+                // Simulate progress for better UX (since we don't have actual upload progress)
+                let progressValue = 0;
+                const progressInterval = setInterval(() => {
+                    if (progressValue < 90) {
+                        progressValue += 5;
+                        updateProgress(progressValue);
+                    }
+                }, 300);
+                
+                disableButtons();
+                
+                fetch(`http://127.0.0.1:5000/${action}`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    clearInterval(progressInterval);
+                    updateProgress(100);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.status}`);
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    
+                    // Set download filename
+                    if (action === 'encrypt') {
+                        a.download = file.name + '.enc';
+                    } else {
+                        a.download = file.name.endsWith('.enc') 
+                            ? file.name.slice(0, -4) 
+                            : 'decrypted-' + file.name;
+                    }
+                    
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    
+                    showStatus(
+                        'success', 
+                        'Operation Successful', 
+                        `File ${operationPastText.toLowerCase()} successfully using ${encryptionMethod.toUpperCase()}.`
+                    );
+                    
+                    // Show the key box with the current key if encryption was successful
+                    if (action === 'encrypt') {
+                        keyBox.style.display = 'block';
+                        keyBoxContent.textContent = keyInput.value;
+                    }
+                    
+                    enableButtons();
+                })
+                .catch(error => {
+                    clearInterval(progressInterval);
+                    showStatus(
+                        'error', 
+                        'Operation Failed', 
+                        `Error during file ${action}: ${error.message}`
+                    );
+                    enableButtons();
+                });
+            }
+        });
+    </script>
+</body>
+</html>
